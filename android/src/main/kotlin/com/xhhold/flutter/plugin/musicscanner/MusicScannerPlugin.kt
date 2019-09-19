@@ -1,4 +1,4 @@
-package com.xhhold.flutter.plugin.music_scanner
+package com.xhhold.flutter.plugin.musicscanner
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
