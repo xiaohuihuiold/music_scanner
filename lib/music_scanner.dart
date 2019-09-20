@@ -1,13 +1,37 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'album_info.dart';
+import 'music_info.dart';
+
+export 'album_info.dart';
+export 'music_info.dart';
 
 class MusicScanner {
   static const MethodChannel _channel =
-      const MethodChannel('music_scanner');
+      const MethodChannel('com.xhhold.flutter.plugin.musicscanner');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  /// 获取所有音乐
+  static Future<List<MusicInfo>> getAllMusic() async {
+    List<dynamic> musicList = await _channel.invokeMethod('getAllMusic');
+    List<MusicInfo> result = List();
+    musicList?.forEach((e) {
+      if (e == null || e is! Map) return;
+      MusicInfo musicInfo = MusicInfo.fromJson(Map.from(e));
+      result.add(musicInfo);
+    });
+    return result;
+  }
+
+  /// 获取所有专辑
+  static Future<List<AlbumInfo>> getAllAlbum() async {
+    List<dynamic> albumList = await _channel.invokeMethod('getAllAlbum');
+    List<AlbumInfo> result = List();
+    albumList?.forEach((e) {
+      if (e == null || e is! Map) return;
+      AlbumInfo albumInfo = AlbumInfo.fromJson(Map.from(e));
+      result.add(albumInfo);
+    });
+    return result;
   }
 }

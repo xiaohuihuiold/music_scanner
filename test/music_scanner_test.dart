@@ -18,6 +18,6 @@ void main() {
   });
 
   test('getPlatformVersion', () async {
-    expect(await MusicScanner.platformVersion, '42');
+    expect('', '42');
   });
 }
