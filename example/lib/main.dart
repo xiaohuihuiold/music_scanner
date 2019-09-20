@@ -73,6 +73,9 @@ class _MusicPageState extends State<MusicPage> {
       itemBuilder: (context, index) {
         MusicInfo musicInfo = _musicList[index];
         return ListTile(
+          onTap: () {
+            print(musicInfo.albumPath);
+          },
           leading: AspectRatio(
             aspectRatio: 1.0,
             child: musicInfo.albumPath != null
@@ -117,6 +120,9 @@ class _AlbumPageState extends State<AlbumPage> {
       itemBuilder: (context, index) {
         AlbumInfo albumInfo = _albumList[index];
         return ListTile(
+          onTap: () {
+            print(albumInfo.path);
+          },
           leading: AspectRatio(
             aspectRatio: 1.0,
             child: albumInfo.path != null
@@ -124,7 +130,10 @@ class _AlbumPageState extends State<AlbumPage> {
                     File(albumInfo.path),
                     fit: BoxFit.cover,
                   )
-                : Icon(Icons.music_note),
+                : CircleAvatar(
+                    child: Icon(Icons.music_note),
+                    backgroundColor: Colors.grey,
+                  ),
           ),
           title: Text(albumInfo.name),
           subtitle: Text(albumInfo.artist),
