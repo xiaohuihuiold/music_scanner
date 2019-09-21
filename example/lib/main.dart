@@ -47,6 +47,17 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                 });
               },
             ),
+            SizedBox(height: 8.0),
+            FloatingActionButton(
+              child: Icon(Icons.search),
+              onPressed: () {
+                MusicScanner.searchMusic('vocaloid').then((value) {
+                  value?.forEach((f) {
+                    print(f.toJson());
+                  });
+                });
+              },
+            ),
           ],
         ),
         appBar: AppBar(
@@ -100,7 +111,9 @@ class _MusicPageState extends State<MusicPage> {
         MusicInfo musicInfo = _musicList[index];
         return ListTile(
           onTap: () {
-            print(musicInfo.albumPath);
+            MusicScanner.getAlbumByAlbumId(musicInfo.albumId).then((value) {
+              print(value.toJson());
+            });
           },
           leading: AspectRatio(
             aspectRatio: 1.0,

@@ -33,6 +33,17 @@ class MusicScanner {
         private val threadCount = AtomicInteger()
 
         /**
+         * 模糊查找音乐
+         */
+        @JvmStatic
+        fun searchMusic(context: Context, keyword: String?): MutableList<MutableMap<String, Any?>>? {
+            if (keyword == null) {
+                return null
+            }
+            return getMusics(context, "${MediaStore.Audio.Media.TITLE} LIKE ? OR ${MediaStore.Audio.Media.ALBUM} LIKE ? OR ${MediaStore.Audio.Media.ARTIST} LIKE ?", arrayOf("%$keyword%", "%$keyword%", "%$keyword%"), null, null)
+        }
+
+        /**
          * 根据专辑id查找音乐
          */
         @JvmStatic
@@ -114,6 +125,21 @@ class MusicScanner {
                 close()
             }
             return musicList
+        }
+
+        /**
+         * 根据专辑id查找专辑
+         */
+        @JvmStatic
+        fun getAlbumByAlbumId(context: Context, albumId: Int?): MutableMap<String, Any?>? {
+            if (albumId == null) {
+                return null
+            }
+            val albums = getAlbums(context, "${MediaStore.Audio.Albums._ID} = ?", arrayOf("$albumId"), null, null)
+            if (albums == null || albums.size == 0) {
+                return null
+            }
+            return albums[0]
         }
 
         /**

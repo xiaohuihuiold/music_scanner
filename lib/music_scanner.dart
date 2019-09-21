@@ -11,6 +11,19 @@ class MusicScanner {
   static const MethodChannel _channel =
       const MethodChannel('com.xhhold.flutter.plugin.musicscanner');
 
+  /// 模糊查找音乐
+  static Future<List<MusicInfo>> searchMusic(String keyword) async {
+    List<dynamic> musicList =
+        await _channel.invokeMethod('searchMusic', {'keyword': keyword});
+    List<MusicInfo> result = List();
+    musicList?.forEach((e) {
+      if (e == null || e is! Map) return;
+      MusicInfo musicInfo = MusicInfo.fromJson(Map.from(e));
+      result.add(musicInfo);
+    });
+    return result;
+  }
+
   /// 获取所有音乐
   static Future<List<MusicInfo>> getAllMusic() async {
     List<dynamic> musicList = await _channel.invokeMethod('getAllMusic');
@@ -46,6 +59,16 @@ class MusicScanner {
       result.add(albumInfo);
     });
     return result;
+  }
+
+  /// 根据专辑id获取音乐
+  static Future<AlbumInfo> getAlbumByAlbumId(int albumId) async {
+    dynamic album =
+        await _channel.invokeMethod('getAlbumByAlbumId', {'albumId': albumId});
+    if (album == null) {
+      return null;
+    }
+    return AlbumInfo.fromJson(Map.from(album));
   }
 
   /// 获取专辑图片

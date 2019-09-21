@@ -20,6 +20,10 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
+            "searchMusic" -> {
+                // 模糊查找音乐
+                searchMusic(call, result)
+            }
             "getAllMusic" -> {
                 // 获取所有音乐
                 getAllMusic(result)
@@ -30,7 +34,11 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
             }
             "getMusicsByAlbumId" -> {
                 // 根据专辑id查找音乐
-                getMusicsByAlbumId(call,result)
+                getMusicsByAlbumId(call, result)
+            }
+            "getAlbumByAlbumId" -> {
+                // 根据专辑id查找专辑
+                getAlbumByAlbumId(call, result)
             }
             "refreshAlbumImagesCache" -> {
                 // 刷新专辑图片
@@ -42,6 +50,32 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
             }
             else -> {
                 result.notImplemented()
+            }
+        }
+    }
+
+    /**
+     * 模糊查找音乐
+     */
+    private fun searchMusic(call: MethodCall, result: Result) {
+        val keyword = call.argument<String>("keyword")
+        if (keyword == null) {
+            result.success(null)
+            return
+        }
+        // 线程池里面查找
+        threadPoolExecutor.execute {
+            registrar.apply {
+                // 获得所有音乐
+                val musicList: MutableList<MutableMap<String, Any?>>? = MusicScanner.searchMusic(context(), keyword)
+                // 传回数据
+                activity().apply {
+                    if (!(isFinishing || isDestroyed)) {
+                        runOnUiThread {
+                            result.success(musicList)
+                        }
+                    }
+                }
             }
         }
     }
@@ -88,7 +122,6 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
         }
     }
 
-
     /**
      * 根据专辑id查找音乐
      */
@@ -108,6 +141,32 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
                     if (!(isFinishing || isDestroyed)) {
                         runOnUiThread {
                             result.success(musicList)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据专辑id查找专辑
+     */
+    private fun getAlbumByAlbumId(call: MethodCall, result: Result) {
+        val albumId = call.argument<Int>("albumId")
+        if (albumId == null) {
+            result.success(null)
+            return
+        }
+        // 线程池里面查找
+        threadPoolExecutor.execute {
+            registrar.apply {
+                // 根据专辑id查找音乐
+                val album: MutableMap<String, Any?>? = MusicScanner.getAlbumByAlbumId(context(), albumId)
+                // 传回数据
+                activity().apply {
+                    if (!(isFinishing || isDestroyed)) {
+                        runOnUiThread {
+                            result.success(album)
                         }
                     }
                 }
