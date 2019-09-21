@@ -33,89 +33,14 @@ class MusicScanner {
         private val threadCount = AtomicInteger()
 
         /**
-         * 清除专辑图片缓存
+         * 根据专辑id查找音乐
          */
-        @Synchronized
         @JvmStatic
-        fun clearAlbumImagesCache(context: Context) {
-            // 获取缓存文件夹
-            val cacheDir = "${context.cacheDir.path}/$CACHE_ALBUM_IMAGE_FOLDER"
-            val cacheFile = File(cacheDir)
-            // 没有创建缓存文件夹则返回
-            if (!cacheFile.exists()) {
-                return
+        fun getMusicsByAlbumId(context: Context, albumId: Int?): MutableList<MutableMap<String, Any?>>? {
+            if (albumId == null) {
+                return null
             }
-            // 遍历删除缓存文件以及缓存文件夹
-            try {
-                val cacheFiles = cacheFile.listFiles()
-                cacheFiles?.forEach {
-                    it.delete()
-                }
-                cacheFile.delete()
-            } catch (e: Exception) {
-
-            }
-        }
-
-        /**
-         * 刷新专辑封面
-         */
-        @Synchronized
-        @JvmStatic
-        fun refreshAlbumImagesCache(registrar: PluginRegistry.Registrar, result: MethodChannel.Result) {
-            val context = registrar.context()
-            val contentResolver: ContentResolver? = context.contentResolver
-            if (contentResolver == null) {
-                Log.e(TAG, "contentResolver is null!!!")
-                return
-            }
-            // 专辑列表
-            val albumMap: SparseArray<String?> = SparseArray()
-            contentResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART), null, null, null)
-                    ?.apply {
-                        moveToFirst()
-                        while (moveToNext()) {
-                            val id = getInt(0)
-                            val path = getString(1)
-                            albumMap.put(id, path)
-                        }
-                        close()
-                    }
-            // 查询所有音乐
-            contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Media.ALBUM_ID, MediaStore.Audio.Media.DATA), null, null, null)
-                    ?.apply {
-                        moveToFirst()
-                        while (moveToNext()) {
-                            // 进入新的任务自增
-                            threadCount.incrementAndGet()
-                            val id = getInt(0)
-                            val path = getString(1)
-                            threadPoolExecutor.execute {
-                                // 加载专辑图片并缓存
-                                loadAlbumImageToCache(context, id, albumMap[id], path)
-                                // 当任务执行完成时自减并判断是否是最后一个
-                                if (threadCount.decrementAndGet() != 0) {
-                                    return@execute
-                                }
-                                registrar.apply {
-                                    activity()?.apply {
-                                        if (isFinishing || isDestroyed) {
-                                            return@execute
-                                        }
-                                        runOnUiThread {
-                                            try {
-                                                // 执行完成返回结果
-                                                result.success(null)
-                                            } catch (e: Exception) {
-                                            }
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                        close()
-                    }
+            return getMusics(context, "${MediaStore.Audio.Media.ALBUM_ID} = ?", arrayOf("$albumId"), null, null)
         }
 
         /**
@@ -164,7 +89,6 @@ class MusicScanner {
             )
 
             cursor?.apply {
-                moveToFirst()
                 while (moveToNext()) {
                     val music: MutableMap<String, Any?> = HashMap()
                     val albumId = getInt(8)
@@ -231,7 +155,6 @@ class MusicScanner {
             )
 
             cursor?.apply {
-                moveToFirst()
                 while (moveToNext()) {
                     val album: MutableMap<String, Any?> = HashMap()
                     val id = getInt(0)
@@ -248,6 +171,90 @@ class MusicScanner {
                 close()
             }
             return albumList
+        }
+
+        /**
+         * 清除专辑图片缓存
+         */
+        @Synchronized
+        @JvmStatic
+        fun clearAlbumImagesCache(context: Context) {
+            // 获取缓存文件夹
+            val cacheDir = "${context.cacheDir.path}/$CACHE_ALBUM_IMAGE_FOLDER"
+            val cacheFile = File(cacheDir)
+            // 没有创建缓存文件夹则返回
+            if (!cacheFile.exists()) {
+                return
+            }
+            // 遍历删除缓存文件以及缓存文件夹
+            try {
+                val cacheFiles = cacheFile.listFiles()
+                cacheFiles?.forEach {
+                    it.delete()
+                }
+                cacheFile.delete()
+            } catch (e: Exception) {
+
+            }
+        }
+
+        /**
+         * 刷新专辑封面
+         */
+        @Synchronized
+        @JvmStatic
+        fun refreshAlbumImagesCache(registrar: PluginRegistry.Registrar, result: MethodChannel.Result) {
+            val context = registrar.context()
+            val contentResolver: ContentResolver? = context.contentResolver
+            if (contentResolver == null) {
+                Log.e(TAG, "contentResolver is null!!!")
+                return
+            }
+            // 专辑列表
+            val albumMap: SparseArray<String?> = SparseArray()
+            contentResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART), null, null, null)
+                    ?.apply {
+                        while (moveToNext()) {
+                            val id = getInt(0)
+                            val path = getString(1)
+                            albumMap.put(id, path)
+                        }
+                        close()
+                    }
+            // 查询所有音乐
+            contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Media.ALBUM_ID, MediaStore.Audio.Media.DATA), null, null, null)
+                    ?.apply {
+                        while (moveToNext()) {
+                            // 进入新的任务自增
+                            threadCount.incrementAndGet()
+                            val id = getInt(0)
+                            val path = getString(1)
+                            threadPoolExecutor.execute {
+                                // 加载专辑图片并缓存
+                                loadAlbumImageToCache(context, id, albumMap[id], path)
+                                // 当任务执行完成时自减并判断是否是最后一个
+                                if (threadCount.decrementAndGet() != 0) {
+                                    return@execute
+                                }
+                                registrar.apply {
+                                    activity()?.apply {
+                                        if (isFinishing || isDestroyed) {
+                                            return@execute
+                                        }
+                                        runOnUiThread {
+                                            try {
+                                                // 执行完成返回结果
+                                                result.success(null)
+                                            } catch (e: Exception) {
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        close()
+                    }
         }
 
         /**

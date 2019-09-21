@@ -23,6 +23,19 @@ class MusicScanner {
     return result;
   }
 
+  /// 根据专辑id获取音乐
+  static Future<List<MusicInfo>> getMusicsByAlbumId(int albumId) async {
+    List<dynamic> musicList =
+        await _channel.invokeMethod('getMusicsByAlbumId', {'albumId': albumId});
+    List<MusicInfo> result = List();
+    musicList?.forEach((e) {
+      if (e == null || e is! Map) return;
+      MusicInfo musicInfo = MusicInfo.fromJson(Map.from(e));
+      result.add(musicInfo);
+    });
+    return result;
+  }
+
   /// 获取所有专辑
   static Future<List<AlbumInfo>> getAllAlbum() async {
     List<dynamic> albumList = await _channel.invokeMethod('getAllAlbum');

@@ -146,7 +146,11 @@ class _AlbumPageState extends State<AlbumPage> {
         AlbumInfo albumInfo = _albumList[index];
         return ListTile(
           onTap: () {
-            print(albumInfo.path);
+            MusicScanner.getMusicsByAlbumId(albumInfo.id).then((value) {
+              value.forEach((f) {
+                print(f.toJson());
+              });
+            });
           },
           leading: AspectRatio(
             aspectRatio: 1.0,
