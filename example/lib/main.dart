@@ -17,7 +17,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller = TabController(length: 2, vsync: this);
+    _controller = TabController(length: 3, vsync: this);
     MusicScanner.refreshAlbumImagesCache().then((_) {
       print('success');
     });
@@ -67,6 +67,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
             tabs: [
               Tab(text: "音乐"),
               Tab(text: "专辑"),
+              Tab(text: "艺术家"),
             ],
           ),
         ),
@@ -75,6 +76,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           children: [
             MusicPage(),
             AlbumPage(),
+            ArtistPage(),
           ],
         ),
       ),
@@ -82,6 +84,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 }
 
+/// 音乐页面
 class MusicPage extends StatefulWidget {
   @override
   _MusicPageState createState() => _MusicPageState();
@@ -114,12 +117,30 @@ class _MusicPageState extends State<MusicPage> {
             MusicScanner.getAlbumByAlbumId(musicInfo.albumId).then((value) {
               print(value.toJson());
             });
+            MusicScanner.getArtistByArtistId(musicInfo.artistId).then((value) {
+              print(value.toJson());
+            });
           },
           leading: AspectRatio(
             aspectRatio: 1.0,
-            child: Image.file(
-              File(musicInfo.albumPath),
-              fit: BoxFit.cover,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(80.0),
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  Image.file(
+                    File(musicInfo.albumPath),
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(80.0),
+                      border: Border.all(
+                          color: Colors.grey.withOpacity(0.6), width: 2.0),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           title: Text(musicInfo.title),
@@ -130,6 +151,7 @@ class _MusicPageState extends State<MusicPage> {
   }
 }
 
+/// 专辑列表页面
 class AlbumPage extends StatefulWidget {
   @override
   _AlbumPageState createState() => _AlbumPageState();
@@ -167,20 +189,95 @@ class _AlbumPageState extends State<AlbumPage> {
           },
           leading: AspectRatio(
             aspectRatio: 1.0,
-            child: albumInfo.path != null
-                ? Image.file(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(80.0),
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  Image.file(
                     File(albumInfo.path),
                     fit: BoxFit.cover,
-                  )
-                : CircleAvatar(
-                    child: Icon(Icons.music_note),
-                    backgroundColor: Colors.grey,
                   ),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(80.0),
+                      border: Border.all(
+                          color: Colors.grey.withOpacity(0.6), width: 2.0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           title: Text(albumInfo.name),
           subtitle: Text(albumInfo.artist),
           trailing: Text(
             '${albumInfo.total}首',
+            style: TextStyle(color: Colors.black54),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 艺术家页面
+class ArtistPage extends StatefulWidget {
+  @override
+  _ArtistPageState createState() => _ArtistPageState();
+}
+
+class _ArtistPageState extends State<ArtistPage> {
+  List<ArtistInfo> _artistList;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      List<ArtistInfo> artistList = await MusicScanner.getAllArtist();
+      if (!mounted) return;
+      setState(() {
+        _artistList = artistList;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: _artistList?.length ?? 0,
+      itemBuilder: (context, index) {
+        ArtistInfo artistInfo = _artistList[index];
+        return ListTile(
+          onTap: () {
+            MusicScanner.getMusicsByArtistId(artistInfo.id).then((value) {
+              value.forEach((f) {
+                print(f.toJson());
+              });
+            });
+          },
+          leading: AspectRatio(
+            aspectRatio: 1.0,
+            child: Container(
+              alignment: Alignment.center,
+              margin: EdgeInsets.all(4.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                artistInfo.name[0],
+                style: TextStyle(
+                  fontSize: 28.0,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          title: Text(artistInfo.name),
+          trailing: Text(
+            '${artistInfo.tracks}首',
             style: TextStyle(color: Colors.black54),
           ),
         );

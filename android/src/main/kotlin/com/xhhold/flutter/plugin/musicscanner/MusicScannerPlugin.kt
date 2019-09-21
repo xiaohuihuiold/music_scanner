@@ -32,13 +32,25 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
                 // 获取所有专辑
                 getAllAlbum(result)
             }
+            "getAllArtist" -> {
+                // 获取所有艺术家
+                getAllArtist(result)
+            }
             "getMusicsByAlbumId" -> {
                 // 根据专辑id查找音乐
                 getMusicsByAlbumId(call, result)
             }
+            "getMusicsByArtistId" -> {
+                // 根据艺术家id查找音乐
+                getMusicsByArtistId(call, result)
+            }
             "getAlbumByAlbumId" -> {
                 // 根据专辑id查找专辑
                 getAlbumByAlbumId(call, result)
+            }
+            "getArtistByArtistId" -> {
+                // 根据艺术家id查找艺术家
+                getArtistByArtistId(call, result)
             }
             "refreshAlbumImagesCache" -> {
                 // 刷新专辑图片
@@ -123,6 +135,27 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
     }
 
     /**
+     * 获取所有艺术家
+     */
+    private fun getAllArtist(result: Result) {
+        // 线程池里面查找
+        threadPoolExecutor.execute {
+            registrar.apply {
+                // 获得所有专辑
+                val artistList: MutableList<MutableMap<String, Any?>>? = MusicScanner.getAllArtist(context())
+                // 传回数据
+                activity().apply {
+                    if (!(isFinishing || isDestroyed)) {
+                        runOnUiThread {
+                            result.success(artistList)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 根据专辑id查找音乐
      */
     private fun getMusicsByAlbumId(call: MethodCall, result: Result) {
@@ -149,6 +182,32 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
     }
 
     /**
+     * 根据艺术家id查找音乐
+     */
+    private fun getMusicsByArtistId(call: MethodCall, result: Result) {
+        val artistId = call.argument<Int>("artistId")
+        if (artistId == null) {
+            result.success(null)
+            return
+        }
+        // 线程池里面查找
+        threadPoolExecutor.execute {
+            registrar.apply {
+                // 根据艺术家id查找音乐
+                val musicList: MutableList<MutableMap<String, Any?>>? = MusicScanner.getMusicsByArtistId(context(), artistId)
+                // 传回数据
+                activity().apply {
+                    if (!(isFinishing || isDestroyed)) {
+                        runOnUiThread {
+                            result.success(musicList)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 根据专辑id查找专辑
      */
     private fun getAlbumByAlbumId(call: MethodCall, result: Result) {
@@ -160,13 +219,39 @@ class MusicScannerPlugin(private val registrar: Registrar) : MethodCallHandler {
         // 线程池里面查找
         threadPoolExecutor.execute {
             registrar.apply {
-                // 根据专辑id查找音乐
+                // 根据专辑id查找专辑
                 val album: MutableMap<String, Any?>? = MusicScanner.getAlbumByAlbumId(context(), albumId)
                 // 传回数据
                 activity().apply {
                     if (!(isFinishing || isDestroyed)) {
                         runOnUiThread {
                             result.success(album)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据艺术家id查找艺术家
+     */
+    private fun getArtistByArtistId(call: MethodCall, result: Result) {
+        val artistId = call.argument<Int>("artistId")
+        if (artistId == null) {
+            result.success(null)
+            return
+        }
+        // 线程池里面查找
+        threadPoolExecutor.execute {
+            registrar.apply {
+                // 根据艺术家id查找艺术家
+                val artist: MutableMap<String, Any?>? = MusicScanner.getArtistByArtistId(context(), artistId)
+                // 传回数据
+                activity().apply {
+                    if (!(isFinishing || isDestroyed)) {
+                        runOnUiThread {
+                            result.success(artist)
                         }
                     }
                 }

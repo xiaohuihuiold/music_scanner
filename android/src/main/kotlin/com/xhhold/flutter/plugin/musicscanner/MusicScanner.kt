@@ -55,6 +55,17 @@ class MusicScanner {
         }
 
         /**
+         * 根据艺术家id查找音乐
+         */
+        @JvmStatic
+        fun getMusicsByArtistId(context: Context, artistId: Int?): MutableList<MutableMap<String, Any?>>? {
+            if (artistId == null) {
+                return null
+            }
+            return getMusics(context, "${MediaStore.Audio.Media.ARTIST_ID} = ?", arrayOf("$artistId"), null, null)
+        }
+
+        /**
          * 获取所有音乐
          */
         @JvmStatic
@@ -197,6 +208,70 @@ class MusicScanner {
                 close()
             }
             return albumList
+        }
+
+        /**
+         * 根据艺术家id查找艺术家
+         */
+        @JvmStatic
+        fun getArtistByArtistId(context: Context, artistId: Int?): MutableMap<String, Any?>? {
+            if (artistId == null) {
+                return null
+            }
+            val artists = getArtists(context, "${MediaStore.Audio.Artists._ID} = ?", arrayOf("$artistId"), null, null)
+            if (artists == null || artists.size == 0) {
+                return null
+            }
+            return artists[0]
+        }
+
+        /**
+         * 获取所有艺术家
+         */
+        @JvmStatic
+        fun getAllArtist(context: Context): MutableList<MutableMap<String, Any?>>? {
+            return getArtists(context, null, null, null, null)
+        }
+
+        /**
+         * 获取艺术家
+         */
+        @JvmStatic
+        fun getArtists(context: Context, where: String?, whereArgs: Array<String>?, sortBy: String?, sort: String?): MutableList<MutableMap<String, Any?>>? {
+            val contentResolver: ContentResolver? = context.contentResolver
+            if (contentResolver == null) {
+                Log.e(TAG, "contentResolver is null!!!")
+                return null
+            }
+            // 艺术家列表
+            val artistList: MutableList<MutableMap<String, Any?>> = ArrayList()
+            // 需要取出的字段
+            val projection: Array<String> = arrayOf(
+                    MediaStore.Audio.Artists._ID, // int
+                    MediaStore.Audio.Artists.ARTIST, // string
+                    MediaStore.Audio.Artists.NUMBER_OF_ALBUMS, // int
+                    MediaStore.Audio.Artists.NUMBER_OF_TRACKS // int
+            )
+            val cursor: Cursor? = contentResolver.query(
+                    MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
+                    projection,
+                    where,
+                    if (where == null) null else whereArgs,
+                    if (sortBy == null) null else "$sortBy $sort"
+            )
+
+            cursor?.apply {
+                while (moveToNext()) {
+                    val artist: MutableMap<String, Any?> = HashMap()
+                    artist["id"] = getInt(0)
+                    artist["name"] = getString(1)
+                    artist["albums"] = getInt(2)
+                    artist["tracks"] = getInt(3)
+                    artistList.add(artist)
+                }
+                close()
+            }
+            return artistList
         }
 
         /**
