@@ -12,6 +12,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(primaryColor: Colors.blue),
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   TabController _controller;
 
   @override
@@ -25,61 +41,197 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            FloatingActionButton(
-              child: Icon(Icons.refresh),
-              onPressed: () {
-                MusicScanner.refreshAlbumImagesCache().then((_) {
-                  print('success');
-                });
-              },
-            ),
-            SizedBox(height: 8.0),
-            FloatingActionButton(
-              child: Icon(Icons.delete),
-              onPressed: () {
-                MusicScanner.clearAlbumImagesCache().then((_) {
-                  print('success');
-                });
-              },
-            ),
-            SizedBox(height: 8.0),
-            FloatingActionButton(
-              child: Icon(Icons.search),
-              onPressed: () {
-                MusicScanner.searchMusic('vocaloid').then((value) {
-                  value?.forEach((f) {
-                    print(f.toJson());
-                  });
-                });
-              },
-            ),
-          ],
-        ),
-        appBar: AppBar(
-          title: const Text('Music Scanner Example'),
-          bottom: TabBar(
-            controller: _controller,
-            tabs: [
-              Tab(text: "音乐"),
-              Tab(text: "专辑"),
-              Tab(text: "艺术家"),
-            ],
-          ),
-        ),
-        body: TabBarView(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Music Scanner Example'),
+        bottom: TabBar(
           controller: _controller,
-          children: [
-            MusicPage(),
-            AlbumPage(),
-            ArtistPage(),
+          tabs: [
+            Tab(text: "音乐"),
+            Tab(text: "专辑"),
+            Tab(text: "艺术家"),
           ],
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: SearchBarDelegate(),
+              );
+            },
+          ),
+        ],
       ),
+      body: TabBarView(
+        controller: _controller,
+        children: [
+          MusicPage(),
+          AlbumPage(),
+          ArtistPage(),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          FloatingActionButton(
+            heroTag: 'refresh',
+            child: Icon(Icons.refresh),
+            onPressed: () {
+              MusicScanner.refreshAlbumImagesCache().then((_) {
+                print('success');
+              });
+            },
+          ),
+          SizedBox(height: 8.0),
+          FloatingActionButton(
+            heroTag: 'delete',
+            child: Icon(Icons.delete),
+            onPressed: () {
+              MusicScanner.clearAlbumImagesCache().then((_) {
+                print('success');
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 搜索
+class SearchBarDelegate extends SearchDelegate {
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+          showSuggestions(context);
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: AnimatedIcon(
+        icon: AnimatedIcons.menu_arrow,
+        progress: transitionAnimation,
+      ),
+      onPressed: () {
+        if (query.isEmpty) {
+          close(context, null);
+        } else {
+          query = '';
+          showSuggestions(context);
+        }
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return FutureBuilder<List<MusicInfo>>(
+      future: MusicScanner.searchMusic(query),
+      builder: (context, snapshot) {
+        List<MusicInfo> musicList = snapshot.data;
+        return ListView.builder(
+          itemCount: musicList?.length ?? 0,
+          itemBuilder: (context, index) {
+            MusicInfo musicInfo = musicList[index];
+            return ListTile(
+              onTap: () {
+                MusicScanner.getAlbumByAlbumId(musicInfo.albumId).then((value) {
+                  print(value.toJson());
+                });
+                MusicScanner.getArtistByArtistId(musicInfo.artistId)
+                    .then((value) {
+                  print(value.toJson());
+                });
+              },
+              leading: AspectRatio(
+                aspectRatio: 1.0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(80.0),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      Image.file(
+                        File(musicInfo.albumPath),
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(80.0),
+                          border: Border.all(
+                              color: Colors.grey.withOpacity(0.6), width: 2.0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              title: Text(musicInfo.title),
+              subtitle: Text(musicInfo.album),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return FutureBuilder<List<MusicInfo>>(
+      future: MusicScanner.searchMusic(query),
+      builder: (context, snapshot) {
+        List<MusicInfo> musicList = snapshot.data;
+        return ListView.builder(
+          itemCount: musicList?.length ?? 0,
+          itemBuilder: (context, index) {
+            MusicInfo musicInfo = musicList[index];
+            return ListTile(
+              onTap: () {
+                MusicScanner.getAlbumByAlbumId(musicInfo.albumId).then((value) {
+                  print(value.toJson());
+                });
+                MusicScanner.getArtistByArtistId(musicInfo.artistId)
+                    .then((value) {
+                  print(value.toJson());
+                });
+              },
+              leading: AspectRatio(
+                aspectRatio: 1.0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(80.0),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      Image.file(
+                        File(musicInfo.albumPath),
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(80.0),
+                          border: Border.all(
+                              color: Colors.grey.withOpacity(0.6), width: 2.0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              title: Text(musicInfo.title),
+              subtitle: Text(musicInfo.album),
+            );
+          },
+        );
+      },
     );
   }
 }
