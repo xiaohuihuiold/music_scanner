@@ -34,4 +34,14 @@ class MusicScanner {
     });
     return result;
   }
+
+  /// 获取专辑图片
+  static Future<Null> refreshAlbumImagesCache() async {
+    await _channel.invokeMethod('refreshAlbumImagesCache');
+  }
+
+  /// 清除专辑图片缓存
+  static Future<Null> clearAlbumImagesCache() async {
+    await _channel.invokeMethod('clearAlbumImagesCache');
+  }
 }

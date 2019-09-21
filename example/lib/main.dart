@@ -18,12 +18,37 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _controller = TabController(length: 2, vsync: this);
+    MusicScanner.refreshAlbumImagesCache().then((_) {
+      print('success');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            FloatingActionButton(
+              child: Icon(Icons.refresh),
+              onPressed: () {
+                MusicScanner.refreshAlbumImagesCache().then((_) {
+                  print('success');
+                });
+              },
+            ),
+            SizedBox(height: 8.0),
+            FloatingActionButton(
+              child: Icon(Icons.delete),
+              onPressed: () {
+                MusicScanner.clearAlbumImagesCache().then((_) {
+                  print('success');
+                });
+              },
+            ),
+          ],
+        ),
         appBar: AppBar(
           title: const Text('Music Scanner Example'),
           bottom: TabBar(
@@ -60,6 +85,7 @@ class _MusicPageState extends State<MusicPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       List<MusicInfo> musicList = await MusicScanner.getAllMusic();
+      if (!mounted) return;
       setState(() {
         _musicList = musicList;
       });
@@ -78,12 +104,10 @@ class _MusicPageState extends State<MusicPage> {
           },
           leading: AspectRatio(
             aspectRatio: 1.0,
-            child: musicInfo.albumPath != null
-                ? Image.file(
-                    File(musicInfo.albumPath),
-                    fit: BoxFit.cover,
-                  )
-                : Icon(Icons.music_note),
+            child: Image.file(
+              File(musicInfo.albumPath),
+              fit: BoxFit.cover,
+            ),
           ),
           title: Text(musicInfo.title),
           subtitle: Text(musicInfo.album),
@@ -107,6 +131,7 @@ class _AlbumPageState extends State<AlbumPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       List<AlbumInfo> albumList = await MusicScanner.getAllAlbum();
+      if (!mounted) return;
       setState(() {
         _albumList = albumList;
       });
