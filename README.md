@@ -14,6 +14,7 @@ music_scanner:
 
 * 刷新专辑封面缓存:此操作会扫描生成所有专辑封面的缓存,缓存在应用data的cache/album_images内
   * `注:要显示专辑封面只有至少先刷新一次专辑封面缓存,当音乐增加后也需要刷新`
+  * `注:需要读权限`
 ```dart
 MusicScanner.refreshAlbumImagesCache();
 ```
